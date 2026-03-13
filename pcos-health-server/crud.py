@@ -26,11 +26,18 @@ def create_sensor_reading(db: Session, data: SensorDataIn) -> SensorReading:
     db_record = SensorReading(
         device_id=data.device_id,
         timestamp=data.timestamp,
+        dht22_temp=data.dht22_temp,
+        dht22_humidity=data.dht22_humidity,
+        ds18b20_temp=data.ds18b20_temp,
         heart_rate=data.heart_rate,
-        hrv=data.hrv,
-        temperature=data.temperature,
-        activity_level=data.activity_level,
-        sleep_state=data.sleep_state,
+        spo2=data.spo2,
+        accel_x=data.accel_x,
+        accel_y=data.accel_y,
+        accel_z=data.accel_z,
+        gyro_x=data.gyro_x,
+        gyro_y=data.gyro_y,
+        gyro_z=data.gyro_z,
+        mpu_temp=data.mpu_temp,
     )
 
     db.add(db_record)       # stage the INSERT

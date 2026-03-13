@@ -15,8 +15,7 @@ from pydantic import BaseModel, Field, field_validator
 # Request schema — what the ESP32 device sends
 # ---------------------------------------------------------------------------
 
-VALID_SLEEP_STATES = {"awake", "light", "deep", "rem"}
-
+from typing import Optional
 
 class SensorDataIn(BaseModel):
     """
@@ -24,54 +23,30 @@ class SensorDataIn(BaseModel):
     All fields are required; extra fields are forbidden to prevent injection.
     """
 
-    device_id: str = Field(
-        ...,
-        min_length=1,
+    device_id: Optional[str] = Field(
+        default="unknown_device",
         max_length=64,
-        description="Unique identifier of the ESP32 device (e.g. 'device_001')",
+        description="Unique identifier of the ESP32 device (optional)",
     )
-    timestamp: datetime = Field(
+    timestamp: int = Field(
         ...,
-        description="ISO 8601 UTC timestamp when the reading was taken",
+        description="Milliseconds since boot from the ESP32",
     )
-    heart_rate: int = Field(
-        ...,
-        ge=20,
-        le=300,
-        description="Heart rate in beats per minute (20–300 bpm)",
-    )
-    hrv: int = Field(
-        ...,
-        ge=0,
-        le=500,
-        description="Heart rate variability in milliseconds (0–500 ms)",
-    )
-    temperature: float = Field(
-        ...,
-        ge=30.0,
-        le=45.0,
-        description="Body temperature in °C (30.0–45.0)",
-    )
-    activity_level: float = Field(
-        ...,
-        ge=0.0,
-        le=1.0,
-        description="Normalised activity level: 0.0 = rest, 1.0 = intense activity",
-    )
-    sleep_state: str = Field(
-        ...,
-        description="Sleep state string: 'awake' | 'light' | 'deep' | 'rem'",
-    )
-
-    @field_validator("sleep_state")
-    @classmethod
-    def validate_sleep_state(cls, v: str) -> str:
-        v_lower = v.lower().strip()
-        if v_lower not in VALID_SLEEP_STATES:
-            raise ValueError(
-                f"Invalid sleep_state '{v}'. Must be one of: {sorted(VALID_SLEEP_STATES)}"
-            )
-        return v_lower
+    dht22_temp: Optional[float] = Field(None, description="Ambient air temperature in °C")
+    dht22_humidity: Optional[float] = Field(None, description="Relative humidity in %")
+    ds18b20_temp: Optional[float] = Field(None, description="Precise body/surface temperature in °C")
+    heart_rate: Optional[float] = Field(None, description="Heart rate in bpm")
+    spo2: Optional[int] = Field(None, description="Blood oxygen percentage")
+    
+    accel_x: Optional[float] = Field(None, description="Acceleration X axis (g)")
+    accel_y: Optional[float] = Field(None, description="Acceleration Y axis (g)")
+    accel_z: Optional[float] = Field(None, description="Acceleration Z axis (g)")
+    
+    gyro_x: Optional[float] = Field(None, description="Angular rotation X (°/s)")
+    gyro_y: Optional[float] = Field(None, description="Angular rotation Y (°/s)")
+    gyro_z: Optional[float] = Field(None, description="Angular rotation Z (°/s)")
+    
+    mpu_temp: Optional[float] = Field(None, description="Internal chip temperature °C")
 
     model_config = {"extra": "forbid"}
 

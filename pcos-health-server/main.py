@@ -94,13 +94,19 @@ def receive_sensor_data(
     **Example request body:**
     ```json
     {
-      "device_id": "device_001",
-      "timestamp": "2026-03-13T12:30:00Z",
-      "heart_rate": 78,
-      "hrv": 52,
-      "temperature": 36.7,
-      "activity_level": 0.45,
-      "sleep_state": "awake"
+      "timestamp": 126769,
+      "dht22_temp": 29.5,
+      "dht22_humidity": 46.7,
+      "ds18b20_temp": 29.25,
+      "heart_rate": 86.9,
+      "spo2": 97,
+      "accel_x": -0.443,
+      "accel_y": 0.826,
+      "accel_z": 0.472,
+      "gyro_x": 4.73,
+      "gyro_y": -6.99,
+      "gyro_z": -1.95,
+      "mpu_temp": 44.9
     }
     ```
     """
