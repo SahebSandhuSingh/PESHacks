@@ -254,7 +254,7 @@ const Sidebar = ({ isOpen, onClose, role, sensorData, theme = 'dark' }: { isOpen
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           className={cn(
             "fixed top-0 left-0 bottom-0 w-4/5 z-[70] max-w-md border-r p-6 flex flex-col transition-colors duration-500",
-            theme === 'dark' ? "bg-gradient-to-b from-berry to-[#1A0F14] border-rose/10" : "bg-gradient-to-b from-cream to-[#F5F5F5] border-berry/10"
+            theme === 'dark' ? "bg-gradient-to-b from-berry/80 to-berry border-rose/10 backdrop-blur-[40px]" : "bg-gradient-to-b from-cream to-[#F5F5F5] border-berry/10"
           )}
         >
           <div className="flex justify-between items-center mb-10">
@@ -1099,7 +1099,7 @@ const ProfileView = ({ theme, onLogout, onSettings, handleLogout }: { theme: 'da
 export default function App() {
   const [view, setView] = useState<View>('login');
   const [role, setRole] = useState<UserRole>('Patient');
-  const [theme, setTheme] = useState<'dark' | 'light'>('light');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { data, isOffline, isSimulated, history } = useSensorData();
 
@@ -1149,11 +1149,11 @@ export default function App() {
   return (
     <div className={cn(
       "min-h-screen font-sans selection:bg-accent-pink/30 transition-colors duration-500",
-      theme === 'dark' ? "bg-[#1A0F14]" : "bg-[#F5F5F5]"
+      theme === 'dark' ? "bg-berry" : "bg-cream"
     )}>
       <div className={cn(
         "max-w-2xl mx-auto min-h-screen relative shadow-2xl overflow-hidden flex flex-col transition-colors duration-500",
-        theme === 'dark' ? "bg-gradient-to-b from-berry to-[#1A0F14]" : "bg-gradient-to-b from-cream to-[#F5F5F5]"
+        theme === 'dark' ? "bg-gradient-to-b from-berry/90 to-berry" : "bg-gradient-to-b from-cream to-[#F5F5F5]"
       )}>
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role={role} sensorData={data} theme={theme} />
         

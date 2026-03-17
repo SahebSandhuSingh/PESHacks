@@ -8,6 +8,10 @@ class HealthIndicatorsIn(BaseModel):
     sleep_stability: float = Field(..., description="Consistency of sleep cycles (0.0 to 1.0)")
     activity_score: float = Field(..., description="Overall daily physical activity (0.0 to 1.0)")
     temperature_cycle_stability: float = Field(..., description="Regularity of temperature rhythms (0.0 to 1.0)")
+    symptom_severity_index: float = Field(..., description="Aggregated metric of mood and pain (0.0 to 1.0)")
+    age_norm: float = Field(0.0, description="Normalised patient age (0.0 to 1.0)")
+    bmi_norm: float = Field(0.0, description="Normalised patient BMI (0.0 to 1.0)")
+    amh_norm: float = Field(0.0, description="Normalised AMH hormone level (0.0 to 1.0)")
 
 class HealthStateOut(BaseModel):
     """

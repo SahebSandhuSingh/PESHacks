@@ -7,7 +7,7 @@ class DQNNetwork(nn.Module):
     Deep Q-Network (DQN) for the RL health recommendation agent.
 
     Architecture:
-        Input  : health state vector [stress, sleep, activity, temp] → size 4
+        Input  : health state vector [stress, sleep, activity, temp, symptom] → size 5
         Hidden : two fully-connected layers of 64 neurons each (ReLU)
         Output : Q-value for each possible action → size = num_actions
 
@@ -16,7 +16,7 @@ class DQNNetwork(nn.Module):
     of taking that action from that state.
     """
 
-    def __init__(self, state_dim: int = 4, num_actions: int = 5, hidden_dim: int = 64):
+    def __init__(self, state_dim: int = 5, num_actions: int = 5, hidden_dim: int = 64):
         super(DQNNetwork, self).__init__()
 
         self.network = nn.Sequential(

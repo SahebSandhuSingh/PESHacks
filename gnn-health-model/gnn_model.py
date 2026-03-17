@@ -6,12 +6,12 @@ from torch_geometric.nn import GCNConv, global_mean_pool
 class HealthGNN(nn.Module):
     """
     HealthGNN v3 — High accuracy variant:
-    - 4 input features per node (all indicators shared as context)
+    - 5 input features per node (all indicators shared as context)
     - 3 GCN layers with 64 hidden channels
     - BatchNorm + Dropout for regularisation
     - Deep MLP head: 64 -> 32 -> num_outputs
     """
-    def __init__(self, in_channels: int = 4, hidden_channels: int = 64, num_outputs: int = 2):
+    def __init__(self, in_channels: int = 5, hidden_channels: int = 64, num_outputs: int = 2):
         super(HealthGNN, self).__init__()
 
         self.conv1 = GCNConv(in_channels, hidden_channels)

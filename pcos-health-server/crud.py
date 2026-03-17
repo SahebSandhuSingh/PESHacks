@@ -45,3 +45,27 @@ def create_sensor_reading(db: Session, data: SensorDataIn) -> SensorReading:
     db.refresh(db_record)   # reload from DB to populate auto-generated fields (id, created_at)
 
     return db_record
+
+def create_questionnaire_reading(db: Session, data: "schemas.QuestionnaireDataIn") -> SensorReading:
+    """
+    Persist validated questionnaire answers to the database as a new reading.
+    """
+    db_record = SensorReading(
+        device_id=data.device_id,
+        timestamp=data.timestamp,
+        perceived_stress=data.perceived_stress,
+        mood_score=data.mood_score,
+        pain_level=data.pain_level,
+        flow_heaviness=data.flow_heaviness,
+        age=data.age,
+        weight_kg=data.weight_kg,
+        height_cm=data.height_cm,
+        bmi=data.bmi,
+        amh=data.amh,
+    )
+
+    db.add(db_record)
+    db.commit()
+    db.refresh(db_record)
+
+    return db_record

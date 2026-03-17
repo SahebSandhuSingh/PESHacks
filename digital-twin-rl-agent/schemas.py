@@ -10,6 +10,7 @@ class HealthState(BaseModel):
     sleep_stability: float = Field(..., ge=0.0, le=1.0, description="Sleep quality and consistency (0=poor, 1=excellent)")
     activity_score: float = Field(..., ge=0.0, le=1.0, description="Physical activity level (0=sedentary, 1=very active)")
     temperature_cycle_stability: float = Field(..., ge=0.0, le=1.0, description="Circadian temperature rhythm stability (0=disrupted, 1=stable)")
+    symptom_severity_index: float = Field(..., ge=0.0, le=1.0, description="Aggregated subjective symptom severity from questionnaire (0=none, 1=severe)")
 
 
 class RecommendationResponse(BaseModel):

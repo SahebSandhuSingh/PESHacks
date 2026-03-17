@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react';
 import { SensorData } from '../types';
 
-const MOCK_RECOMMENDATIONS = [
-  "Today is a great day for low-impact yoga to manage cortisol levels.",
-  "Consider increasing your protein intake today to support metabolic health.",
-  "Your activity levels are high; ensure you're getting enough magnesium tonight.",
-  "Risk score is slightly elevated. Prioritize 8 hours of sleep and hydration.",
-  "Hormonal balance looks stable. Perfect for a light strength training session."
-];
+
 
 export function useSensorData() {
   const [data, setData] = useState<SensorData | null>(null);
@@ -40,38 +34,43 @@ export function useSensorData() {
         anomaly_detected: risk > 85,
         anomaly_type: risk > 85 ? "Irregular Heart Rate Pattern" : null,
         risk_score: risk,
-        recommendation: MOCK_RECOMMENDATIONS[Math.floor(Math.random() * MOCK_RECOMMENDATIONS.length)],
+        recommendation: "Maintain your current habits.",
         timestamp: Date.now()
       };
     };
 
     const fetchData = async () => {
       try {
-        const response = await fetch('http://172.20.10.3:8000/latest', {
+        const response = await fetch('http://127.0.0.1:8000/latest/unknown_device', {
           signal: AbortSignal.timeout(3000) // 3s timeout
         });
         if (!response.ok) throw new Error('Network response was not ok');
         const rawData = await response.json();
         
-        const risk = Math.floor(Math.random() * 100);
+        const sensor = rawData.sensor_data;
+        const ai = rawData.ai_predictions;
+        
+        // Convert the 0.0-1.0 stability score into a 0-100% "Risk Score" natively
+        const stability = ai?.gnn?.physiological_stability_score ?? 0.5;
+        const risk = Math.floor((1.0 - stability) * 100);
         
         const mappedData: SensorData = {
-          dht22_temp: rawData.ambient_temp,
-          dht22_humidity: rawData.humidity,
-          ds18b20_temp: rawData.body_temp,
-          heart_rate: rawData.heart_rate,
-          spo2: rawData.spo2,
-          accel_x: rawData.accel_x,
-          accel_y: rawData.accel_y,
-          accel_z: rawData.accel_z,
-          gyro_x: rawData.gyro_x,
-          gyro_y: rawData.gyro_y,
-          gyro_z: rawData.gyro_z,
-          mpu_temp: rawData.mpu_temp,
-          anomaly_detected: (rawData.heart_rate > 100 || rawData.body_temp > 38),
-          anomaly_type: rawData.heart_rate > 100 ? "High Heart Rate" : (rawData.body_temp > 38 ? "Fever Detected" : null),
+          dht22_temp: sensor.dht22_temp,
+          dht22_humidity: sensor.dht22_humidity,
+          ds18b20_temp: sensor.ds18b20_temp,
+          heart_rate: sensor.heart_rate,
+          spo2: sensor.spo2,
+          accel_x: sensor.accel_x,
+          accel_y: sensor.accel_y,
+          accel_z: sensor.accel_z,
+          gyro_x: sensor.gyro_x,
+          gyro_y: sensor.gyro_y,
+          gyro_z: sensor.gyro_z,
+          mpu_temp: sensor.mpu_temp,
+          anomaly_detected: (sensor.heart_rate > 100 || sensor.ds18b20_temp > 38),
+          anomaly_type: sensor.heart_rate > 100 ? "High Heart Rate" : (sensor.ds18b20_temp > 38 ? "Fever Detected" : null),
           risk_score: risk,
-          recommendation: MOCK_RECOMMENDATIONS[Math.floor(Math.random() * MOCK_RECOMMENDATIONS.length)],
+          recommendation: ai?.rl?.patient_message || "No recommendation at this time.",
           timestamp: Date.now()
         };
 

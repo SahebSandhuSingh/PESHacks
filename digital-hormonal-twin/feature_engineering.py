@@ -30,8 +30,18 @@ def compute_stress_index(df: pd.DataFrame) -> float:
     hrv_norm = 1.0 - ((avg_hrv - 20) / (100 - 20))
     hrv_norm = max(0.0, min(1.0, hrv_norm))
     
-    # Weighted combination
-    stress = (0.6 * hrv_norm) + (0.4 * hr_norm)
+    # Weighted combination of physiological stress
+    physio_stress = (0.6 * hrv_norm) + (0.4 * hr_norm)
+
+    # Incorporate subjective perceived stress if available (1-10 -> 0.1-1.0)
+    if 'perceived_stress' in df.columns and not df['perceived_stress'].isna().all():
+        latest_perceived = df['perceived_stress'].dropna().iloc[-1]
+        subj_stress = latest_perceived / 10.0
+        # Blend 60% physiological, 40% subjective
+        stress = (0.6 * physio_stress) + (0.4 * subj_stress)
+    else:
+        stress = physio_stress
+
     return round(stress, 2)
 
 
@@ -91,3 +101,69 @@ def compute_temperature_cycle_stability(df: pd.DataFrame) -> float:
         return 0.5
         
     return round(max(0.0, stability), 2)
+
+
+def compute_symptom_severity_index(df: pd.DataFrame) -> float:
+    """
+    Evaluates the user's subjective symptom severity (0.0 to 1.0).
+    Aggregates mood, pain, and flow heaviness from the questionnaire data.
+    """
+    if df.empty:
+        return 0.0
+
+    severity_score = 0.0
+    components = 0
+
+    # 1. Pain Level (1-10 -> 0.1-1.0)
+    if 'pain_level' in df.columns and not df['pain_level'].isna().all():
+        latest_pain = df['pain_level'].dropna().iloc[-1]
+        severity_score += latest_pain / 10.0
+        components += 1
+
+    # 2. Mood Score (1-10 -> 0.1-1.0, inverted so lower mood = higher severity)
+    if 'mood_score' in df.columns and not df['mood_score'].isna().all():
+        latest_mood = df['mood_score'].dropna().iloc[-1]
+        severity_score += (11 - latest_mood) / 10.0
+        components += 1
+
+    # 3. Flow Heaviness
+    if 'flow_heaviness' in df.columns and not df['flow_heaviness'].isna().all():
+        latest_flow = df['flow_heaviness'].dropna().iloc[-1]
+        flow_map = {'none': 0.0, 'light': 0.3, 'medium': 0.6, 'heavy': 1.0}
+        severity_score += flow_map.get(latest_flow, 0.0)
+        components += 1
+
+    if components == 0:
+        return 0.0
+        
+    # Average the available components for the final index
+    return round(max(0.0, min(1.0, severity_score / components)), 2)
+
+
+def compute_patient_profile_norms(df: pd.DataFrame) -> dict:
+    """
+    Extracts and normalises patient profile data (age, bmi, amh) to 0.0-1.0.
+    Uses the latest non-null value from the DataFrame.
+    Normalisation bounds match those used in training data generation.
+    """
+    BOUNDS = {"age": (18.0, 50.0), "bmi": (12.0, 45.0), "amh": (0.0, 70.0)}
+
+    def _latest(col: str) -> float | None:
+        if col in df.columns and not df[col].isna().all():
+            return float(df[col].dropna().iloc[-1])
+        return None
+
+    def _norm(val, lo, hi):
+        if val is None:
+            return 0.0
+        return round(max(0.0, min(1.0, (val - lo) / (hi - lo))), 4)
+
+    age_raw = _latest("age")
+    bmi_raw = _latest("bmi")
+    amh_raw = _latest("amh")
+
+    return {
+        "age_norm": _norm(age_raw, *BOUNDS["age"]),
+        "bmi_norm": _norm(bmi_raw, *BOUNDS["bmi"]),
+        "amh_norm": _norm(amh_raw, *BOUNDS["amh"]),
+    }

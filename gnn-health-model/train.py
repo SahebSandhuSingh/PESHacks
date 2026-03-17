@@ -12,17 +12,23 @@ from gnn_model import HealthGNN
 def load_dataset(csv_path="synthetic_health_data.csv"):
     """
     Loads CSV and converts each row into a PyTorch Geometric Graph.
-    Each of the 4 nodes now carries ALL 4 health indicators as features,
-    giving the GCN far more signal to propagate across edges.
+    Each of the 8 nodes carries ALL 8 indicators as features.
 
     Node layout:
         [0] stress_index       [1] sleep_stability
         [2] activity_score     [3] temperature_cycle_stability
+        [4] symptom_severity_index
+        [5] age_norm           [6] bmi_norm           [7] amh_norm
     """
     df = pd.read_csv(csv_path)
 
-    source_nodes = [1, 2, 2, 1, 0]
-    target_nodes = [0, 0, 3, 3, 3]
+    # Biological edges:
+    #   sleep→stress, activity→stress, activity→temp, sleep→temp,
+    #   stress→temp, symptom→stress, symptom→sleep,
+    #   bmi→activity, bmi→symptom, amh→symptom, amh→stress,
+    #   age→sleep, age→temp
+    source_nodes = [1, 2, 2, 1, 0, 4, 4, 6, 6, 7, 7, 5, 5]
+    target_nodes = [0, 0, 3, 3, 3, 0, 1, 2, 4, 4, 0, 1, 3]
     edge_index = torch.tensor([source_nodes, target_nodes], dtype=torch.long)
 
     graph_dataset = []
@@ -33,10 +39,14 @@ def load_dataset(csv_path="synthetic_health_data.csv"):
             row["stress_index"],
             row["sleep_stability"],
             row["activity_score"],
-            row["temperature_cycle_stability"]
+            row["temperature_cycle_stability"],
+            row["symptom_severity_index"],
+            row["age_norm"],
+            row["bmi_norm"],
+            row["amh_norm"],
         ]
-        # 4 nodes × 4 features each
-        x = torch.tensor([feat, feat, feat, feat], dtype=torch.float)
+        # 8 nodes × 8 features each
+        x = torch.tensor([feat]*8, dtype=torch.float)
 
         y = torch.tensor([[
             row["physiological_stability_score"],
@@ -79,8 +89,8 @@ def train_model():
     train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
     test_loader  = DataLoader(test_data,  batch_size=64, shuffle=False)
 
-    # v3: 4 input features per node, 64 hidden
-    model = HealthGNN(in_channels=4, hidden_channels=64, num_outputs=2)
+    # 8 input features per node, 64 hidden
+    model = HealthGNN(in_channels=8, hidden_channels=64, num_outputs=2)
 
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
@@ -91,7 +101,7 @@ def train_model():
     num_epochs = 100
     best_overall = 0.0
 
-    print(f"Training for {num_epochs} epochs (4-feat nodes, hidden=64, 3 GCN layers)...")
+    print(f"Training for {num_epochs} epochs (8-feat nodes, hidden=64, 3 GCN layers)...")
     print(f"{'Epoch':>6} | {'Loss':>10} | {'Physio%':>8} | {'Stress%':>8} | {'Overall%':>9}")
     print("-" * 52)
 

@@ -6,7 +6,7 @@ from gnn_model import HealthGNN
 # Initialize model
 # For a live service, we would load weights here: `model.load_state_dict(...)`
 # Right now, it's randomly initialized, meaning it outputs deterministic random numbers per user until trained.
-model = HealthGNN(in_channels=1, hidden_channels=16, num_outputs=2)
+model = HealthGNN(in_channels=8, hidden_channels=64, num_outputs=2)
 model.eval()
 
 def infer_health_state(indicators: HealthIndicatorsIn) -> HealthStateOut:

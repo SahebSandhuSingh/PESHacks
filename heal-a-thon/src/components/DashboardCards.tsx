@@ -28,10 +28,10 @@ export const HeartRateCard = ({ data, history, theme = 'dark' }: { data: SensorD
   
   return (
     <div className={cn(
-      "backdrop-blur-xl p-5 rounded-[2rem] border shadow-2xl relative overflow-hidden group transition-all duration-500",
+      "backdrop-blur-3xl p-5 rounded-[2rem] border shadow-[0_8px_32px_rgba(255,42,95,0.15)] relative overflow-hidden group transition-all duration-500",
       theme === 'dark' ? "bg-white/5 border-white/10" : "bg-white border-berry/5"
     )}>
-      <div className="absolute top-0 right-0 w-24 h-24 bg-accent-pink/5 rounded-full blur-2xl -mr-8 -mt-8 group-hover:bg-accent-pink/10 transition-colors" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-accent-pink/10 rounded-full blur-3xl -mr-8 -mt-8 group-hover:bg-accent-pink/20 transition-colors duration-700" />
       <div className="flex justify-between items-start mb-2 relative z-10">
         <div className="flex items-center gap-2 text-rose">
           <Heart size={18} className={hr ? "animate-pulse fill-accent-pink text-accent-pink" : ""} />
@@ -75,10 +75,10 @@ export const SpO2Card = ({ value, theme = 'dark' }: { value: number | null, them
   
   return (
     <div className={cn(
-      "backdrop-blur-xl p-5 rounded-[2rem] border shadow-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-all duration-500",
+      "backdrop-blur-3xl p-5 rounded-[2rem] border shadow-[0_8px_32px_rgba(192,132,252,0.15)] flex flex-col items-center justify-center relative overflow-hidden group transition-all duration-500",
       theme === 'dark' ? "bg-white/5 border-white/10" : "bg-white border-berry/5"
     )}>
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-rose/5 rounded-full blur-2xl -ml-8 -mb-8 group-hover:bg-rose/10 transition-colors" />
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-rose/10 rounded-full blur-3xl -ml-8 -mb-8 group-hover:bg-rose/20 transition-colors duration-700" />
       <div className="absolute top-4 left-4 flex items-center gap-2 text-rose z-10">
         <Wind size={18} />
         <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">SpO2</span>
@@ -105,7 +105,7 @@ export const SpO2Card = ({ value, theme = 'dark' }: { value: number | null, them
 
 export const TemperatureCard = ({ body, ambient, theme = 'dark' }: { body: number | null, ambient: number | null, theme?: 'dark' | 'light' }) => (
   <div className={cn(
-    "backdrop-blur-xl p-5 rounded-[2rem] border shadow-2xl transition-all duration-500",
+    "backdrop-blur-3xl p-5 rounded-[2rem] border shadow-[0_8px_32px_rgba(255,42,95,0.1)] transition-all duration-500 relative overflow-hidden",
     theme === 'dark' ? "bg-white/5 border-white/10" : "bg-white border-berry/5"
   )}>
     <div className="flex items-center gap-2 text-rose mb-4">
@@ -146,7 +146,7 @@ export const MovementCard = ({ accel, gyro, theme = 'dark' }: { accel: {x:number
   
   return (
     <div className={cn(
-      "backdrop-blur-xl p-5 rounded-[2rem] border shadow-2xl transition-all duration-500",
+      "backdrop-blur-3xl p-5 rounded-[2rem] border shadow-[0_8px_32px_rgba(192,132,252,0.1)] transition-all duration-500 relative overflow-hidden",
       theme === 'dark' ? "bg-white/5 border-white/10" : "bg-white border-berry/5"
     )}>
       <div className="flex justify-between items-center mb-4">
@@ -192,10 +192,10 @@ export const RiskScoreCard = ({ score, theme = 'dark' }: { score: number, theme?
   
   return (
     <div className={cn(
-      "backdrop-blur-xl p-6 rounded-[2.5rem] border shadow-2xl flex flex-col items-center relative overflow-hidden transition-all duration-500",
+      "backdrop-blur-3xl p-6 rounded-[2.5rem] border shadow-[0_10px_40px_rgba(255,42,95,0.2)] flex flex-col items-center relative overflow-hidden transition-all duration-500",
       theme === 'dark' ? "bg-white/5 border-white/10" : "bg-white border-berry/5"
     )}>
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-rose/20 to-transparent" />
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent-pink to-transparent opacity-50" />
       <h3 className="text-rose text-[10px] font-bold uppercase tracking-[0.2em] mb-6 opacity-60">PCOS Risk Analysis</h3>
       <div className="relative w-44 h-44 flex items-center justify-center">
         <svg className="w-full h-full -rotate-90">
@@ -218,8 +218,8 @@ export const RiskScoreCard = ({ score, theme = 'dark' }: { score: number, theme?
 
 export const RecommendationCard = ({ text, theme = 'dark' }: { text: string, theme?: 'dark' | 'light' }) => (
   <div className={cn(
-    "p-6 rounded-[2rem] shadow-2xl relative overflow-hidden group transition-all duration-500",
-    theme === 'dark' ? "bg-gradient-to-br from-accent-pink to-rose" : "bg-gradient-to-br from-berry to-rose"
+    "p-6 rounded-[2rem] shadow-[0_10px_40px_rgba(255,42,95,0.3)] relative overflow-hidden group transition-all duration-500",
+    theme === 'dark' ? "bg-gradient-to-br from-[#FF2A5F] to-[#C084FC]" : "bg-gradient-to-br from-berry to-rose"
   )}>
     <div className="relative z-10">
       <div className="flex items-center gap-2 text-cream/80 mb-3">
@@ -239,7 +239,7 @@ export const RecommendationCard = ({ text, theme = 'dark' }: { text: string, the
 
 export const HistoricalChart = ({ history, theme = 'dark' }: { history: any[], theme?: 'dark' | 'light' }) => (
   <div className={cn(
-    "backdrop-blur-xl p-6 rounded-[2rem] border shadow-2xl transition-all duration-500",
+    "backdrop-blur-3xl p-6 rounded-[2rem] border shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-500",
     theme === 'dark' ? "bg-white/5 border-white/10" : "bg-white border-berry/5"
   )}>
     <div className="flex items-center gap-2 text-rose mb-6">

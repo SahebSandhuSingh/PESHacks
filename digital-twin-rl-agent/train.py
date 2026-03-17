@@ -25,7 +25,7 @@ def train(
 
     env   = DigitalTwinEnv(max_steps=max_steps)
     agent = DQNAgent(
-        state_dim=4,
+        state_dim=5,
         num_actions=5,
         hidden_dim=64,
         lr=1e-3,
@@ -89,7 +89,7 @@ def train(
     agent.epsilon = 0.0   # pure exploitation
     state, _ = env.reset()
     print(f"  Start state: stress={state[0]:.2f}, sleep={state[1]:.2f}, "
-          f"activity={state[2]:.2f}, temp={state[3]:.2f}")
+          f"activity={state[2]:.2f}, temp={state[3]:.2f}, symptom={state[4]:.2f}")
 
     total_r = 0
     for step in range(max_steps):

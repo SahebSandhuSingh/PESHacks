@@ -47,5 +47,18 @@ class SensorReading(Base):
     
     mpu_temp = Column(Float, nullable=True)               # Internal chip temperature °C
 
+    # Questionnaire Data
+    perceived_stress = Column(Integer, nullable=True)     # 1-10
+    mood_score = Column(Integer, nullable=True)           # 1-10
+    pain_level = Column(Integer, nullable=True)           # 1-10
+    flow_heaviness = Column(String(20), nullable=True)    # 'none', 'light', 'medium', 'heavy'
+
+    # Patient Profile Data
+    age = Column(Float, nullable=True)                    # Age in years
+    weight_kg = Column(Float, nullable=True)              # Weight in kilograms
+    height_cm = Column(Float, nullable=True)              # Height in centimeters
+    bmi = Column(Float, nullable=True)                    # Body Mass Index
+    amh = Column(Float, nullable=True)                    # Anti-Müllerian Hormone (ng/mL)
+
     # Server-side audit timestamp (set automatically on insert)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)

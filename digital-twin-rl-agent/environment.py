@@ -17,6 +17,7 @@ STRESS  = 0
 SLEEP   = 1
 ACTIVITY = 2
 TEMP    = 3
+SYMPTOM = 4
 
 
 class DigitalTwinEnv(gym.Env):
@@ -42,7 +43,7 @@ class DigitalTwinEnv(gym.Env):
        state (episode done) or the max episode steps are reached.
     ──────────────────────────────────────────────────────────────────
 
-    State Space  : [stress_index, sleep_stability, activity_score, temp_cycle_stability]
+    State Space  : [stress_index, sleep_stability, activity_score, temp_cycle_stability, symptom_severity_index]
                    Each value ∈ [0.0, 1.0]
 
     Action Space : Discrete(5)
@@ -59,9 +60,9 @@ class DigitalTwinEnv(gym.Env):
         super().__init__()
         self.max_steps = max_steps
 
-        # Observation: 4 continuous values in [0, 1]
+        # Observation: 5 continuous values in [0, 1]
         self.observation_space = spaces.Box(
-            low=0.0, high=1.0, shape=(4,), dtype=np.float32
+            low=0.0, high=1.0, shape=(5,), dtype=np.float32
         )
 
         # Action: one of 5 discrete lifestyle interventions
@@ -90,6 +91,7 @@ class DigitalTwinEnv(gym.Env):
                 np.random.uniform(0.0, 0.6),   # sleep: low–medium
                 np.random.uniform(0.0, 0.6),   # activity: low–medium
                 np.random.uniform(0.3, 0.8),   # temp: variable
+                np.random.uniform(0.1, 0.7),   # symptom severity: low–high
             ], dtype=np.float32)
 
         self.step_count = 0
@@ -156,14 +158,17 @@ class DigitalTwinEnv(gym.Env):
             s[SLEEP]    = min(1.0, s[SLEEP]    + 0.12 + noise())
             s[STRESS]   = max(0.0, s[STRESS]   - 0.08 + noise())
             s[TEMP]     = min(1.0, s[TEMP]     + 0.05 + noise())
+            s[SYMPTOM]  = max(0.0, s[SYMPTOM]  - 0.04 + noise())
 
         elif action == 1:
             # Stress reduction intervention (meditation, therapy, etc.):
             # Stress drops significantly.
             # Indirectly improves sleep and temperature stability.
+            # Yoga/meditation also reduces symptom severity.
             s[STRESS]   = max(0.0, s[STRESS]   - 0.15 + noise())
             s[SLEEP]    = min(1.0, s[SLEEP]    + 0.06 + noise())
             s[TEMP]     = min(1.0, s[TEMP]     + 0.04 + noise())
+            s[SYMPTOM]  = max(0.0, s[SYMPTOM]  - 0.10 + noise())
 
         elif action == 2:
             # Increase physical activity:
@@ -173,6 +178,7 @@ class DigitalTwinEnv(gym.Env):
             s[ACTIVITY] = min(1.0, s[ACTIVITY] + 0.12 + noise())
             s[STRESS]   = max(0.0, s[STRESS]   - 0.05 + noise(0.03))
             s[TEMP]     = min(1.0, s[TEMP]     + 0.04 + noise())
+            s[SYMPTOM]  = max(0.0, s[SYMPTOM]  - 0.06 + noise())
 
         elif action == 3:
             # Maintain current habits:
@@ -181,6 +187,7 @@ class DigitalTwinEnv(gym.Env):
             s[SLEEP]    = s[SLEEP]    + noise(0.03)
             s[ACTIVITY] = s[ACTIVITY] + noise(0.03)
             s[TEMP]     = s[TEMP]     + noise(0.03)
+            s[SYMPTOM]  = s[SYMPTOM]  + noise(0.03)
 
         elif action == 4:
             # Recommend medical consultation:
@@ -189,6 +196,7 @@ class DigitalTwinEnv(gym.Env):
             s[SLEEP]    = min(1.0, s[SLEEP]    + 0.08 + noise())
             s[ACTIVITY] = min(1.0, s[ACTIVITY] + 0.05 + noise())
             s[TEMP]     = min(1.0, s[TEMP]     + 0.06 + noise())
+            s[SYMPTOM]  = max(0.0, s[SYMPTOM]  - 0.12 + noise())
 
         return np.clip(s, 0.0, 1.0).astype(np.float32)
 
@@ -198,10 +206,11 @@ class DigitalTwinEnv(gym.Env):
         High sleep, activity, temp → healthy; high stress → penalised.
         """
         return float(
-            state[SLEEP]    * 0.35 +
-            state[ACTIVITY] * 0.25 +
-            state[TEMP]     * 0.30 -
-            state[STRESS]   * 0.20 +
+            state[SLEEP]    * 0.30 +
+            state[ACTIVITY] * 0.20 +
+            state[TEMP]     * 0.25 -
+            state[STRESS]   * 0.20 -
+            state[SYMPTOM]  * 0.15 +
             0.30  # baseline offset
         )
 

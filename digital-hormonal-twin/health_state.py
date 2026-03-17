@@ -48,5 +48,9 @@ def build_health_state_response(device_id: str, state_vector: Dict[str, float]) 
         "sleep_stability": state_vector.get("sleep_stability", 0.0),
         "activity_score": state_vector.get("activity_score", 0.0),
         "temperature_cycle_stability": state_vector.get("temperature_cycle_stability", 0.0),
+        "symptom_severity_index": state_vector.get("symptom_severity_index", 0.0),
+        "age_norm": state_vector.get("age_norm", 0.0),
+        "bmi_norm": state_vector.get("bmi_norm", 0.0),
+        "amh_norm": state_vector.get("amh_norm", 0.0),
         "overall_hormonal_balance": balance
     }

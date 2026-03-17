@@ -94,6 +94,7 @@ def recommend(state: HealthState):
         state.sleep_stability,
         state.activity_score,
         state.temperature_cycle_stability,
+        state.symptom_severity_index,
     ]
 
     result = get_recommendation(state_vec, _agent)

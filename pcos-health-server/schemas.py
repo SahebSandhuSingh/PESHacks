@@ -32,11 +32,11 @@ class SensorDataIn(BaseModel):
         ...,
         description="Milliseconds since boot from the ESP32",
     )
-    dht22_temp: Optional[float] = Field(None, description="Ambient air temperature in °C")
-    dht22_humidity: Optional[float] = Field(None, description="Relative humidity in %")
-    ds18b20_temp: Optional[float] = Field(None, description="Precise body/surface temperature in °C")
+    dht22_temp: Optional[float] = Field(None, alias="ambient_temp", description="Ambient air temperature in °C")
+    dht22_humidity: Optional[float] = Field(None, alias="humidity", description="Relative humidity in %")
+    ds18b20_temp: Optional[float] = Field(None, alias="body_temp", description="Precise body/surface temperature in °C")
     heart_rate: Optional[float] = Field(None, description="Heart rate in bpm")
-    spo2: Optional[int] = Field(None, description="Blood oxygen percentage")
+    spo2: Optional[float] = Field(None, description="Blood oxygen percentage")
     
     accel_x: Optional[float] = Field(None, description="Acceleration X axis (g)")
     accel_y: Optional[float] = Field(None, description="Acceleration Y axis (g)")
@@ -48,12 +48,41 @@ class SensorDataIn(BaseModel):
     
     mpu_temp: Optional[float] = Field(None, description="Internal chip temperature °C")
 
-    model_config = {"extra": "forbid"}
+    # Allow population by alias (Arduino keys) or field name (internal keys)
+    model_config = {
+        "populate_by_name": True,
+        "extra": "ignore"  # Don't crash if Arduino sends extra fields
+    }
 
 
 # ---------------------------------------------------------------------------
 # Response schema — what the server returns on success
 # ---------------------------------------------------------------------------
+
+class QuestionnaireDataIn(BaseModel):
+    """
+    Validates the JSON body of POST /questionnaire.
+    """
+    device_id: str = Field(
+        ...,
+        max_length=64,
+        description="Unique identifier of the user/device",
+    )
+    timestamp: int = Field(
+        ...,
+        description="Milliseconds since epoch",
+    )
+    perceived_stress: Optional[int] = Field(None, ge=1, le=10, description="1-10")
+    mood_score: Optional[int] = Field(None, ge=1, le=10, description="1-10")
+    pain_level: Optional[int] = Field(None, ge=1, le=10, description="1-10")
+    flow_heaviness: Optional[Literal["none", "light", "medium", "heavy"]] = Field(None, description="Flow heaviness")
+    age: Optional[float] = Field(None, description="Patient age in years")
+    weight_kg: Optional[float] = Field(None, description="Weight in kilograms")
+    height_cm: Optional[float] = Field(None, description="Height in centimeters")
+    bmi: Optional[float] = Field(None, description="Body Mass Index")
+    amh: Optional[float] = Field(None, description="Anti-Müllerian Hormone in ng/mL")
+
+
 
 
 class SensorDataOut(BaseModel):

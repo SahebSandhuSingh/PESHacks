@@ -6,7 +6,7 @@ from agent import DQNAgent
 
 def load_agent(weights_path: str = "dqn_weights.pth") -> DQNAgent:
     """Load a pre-trained DQN agent from saved weights."""
-    agent = DQNAgent(state_dim=4, num_actions=5, hidden_dim=64)
+    agent = DQNAgent(state_dim=5, num_actions=5, hidden_dim=64)
     agent.load(weights_path)
     agent.epsilon = 0.0   # pure exploitation during inference
     return agent
@@ -59,6 +59,7 @@ def get_recommendation(state_vec: list[float], agent: DQNAgent):
         "sleep_stability":             round(float(ns[1]), 4),
         "activity_score":              round(float(ns[2]), 4),
         "temperature_cycle_stability": round(float(ns[3]), 4),
+        "symptom_severity_index":      round(float(ns[4]), 4),
     }
 
     # All action Q-values for transparency
@@ -74,6 +75,7 @@ def get_recommendation(state_vec: list[float], agent: DQNAgent):
     stress_drop = round(state[0] - ns[0], 2)
     sleep_gain = round(ns[1] - state[1], 2)
     activity_gain = round(ns[2] - state[2], 2)
+    symptom_drop = round(state[4] - ns[4], 2)
     
     msg_parts = [f"Our AI recommends you **{action_text}**.", ""]
     msg_parts.append("*Predicted impact over the next period:*")
@@ -86,6 +88,8 @@ def get_recommendation(state_vec: list[float], agent: DQNAgent):
         msg_parts.append(f"• Your sleep stability will increase (+{sleep_gain:.2f}).")
     if activity_gain > 0.05:
         msg_parts.append(f"• Your physical activity levels will rise (+{activity_gain:.2f}).")
+    if symptom_drop > 0.05:
+        msg_parts.append(f"• Your symptom severity is expected to decrease (-{symptom_drop:.2f}).")
         
     if len(msg_parts) == 2:
         msg_parts.append("• This action will help stabilise your current health trajectory.")

@@ -14,6 +14,8 @@ from feature_engineering import (
     compute_sleep_stability,
     compute_stress_index,
     compute_temperature_cycle_stability,
+    compute_symptom_severity_index,
+    compute_patient_profile_norms,
 )
 
 
@@ -33,13 +35,23 @@ def compute_baseline_and_current_state(df: pd.DataFrame) -> Dict[str, float]:
             "sleep_stability": 0.0,
             "activity_score": 0.0,
             "temperature_cycle_stability": 0.0,
+            "symptom_severity_index": 0.0,
+            "age_norm": 0.0,
+            "bmi_norm": 0.0,
+            "amh_norm": 0.0,
         }
 
     # Generate current indicators
-    return {
+    state = {
         "stress_index": compute_stress_index(df),
         "sleep_stability": compute_sleep_stability(df),
         "activity_score": compute_activity_score(df),
         "temperature_cycle_stability": compute_temperature_cycle_stability(df),
+        "symptom_severity_index": compute_symptom_severity_index(df),
     }
+
+    # Add normalised patient profile features
+    state.update(compute_patient_profile_norms(df))
+
+    return state
 

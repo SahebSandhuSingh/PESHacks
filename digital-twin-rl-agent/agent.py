@@ -57,7 +57,7 @@ class DQNAgent:
 
     def __init__(
         self,
-        state_dim:     int   = 4,
+        state_dim:     int   = 5,
         num_actions:   int   = 5,
         hidden_dim:    int   = 64,
         lr:            float = 1e-3,
