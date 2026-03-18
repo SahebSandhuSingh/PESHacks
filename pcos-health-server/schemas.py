@@ -82,9 +82,6 @@ class QuestionnaireDataIn(BaseModel):
     bmi: Optional[float] = Field(None, description="Body Mass Index")
     amh: Optional[float] = Field(None, description="Anti-Müllerian Hormone in ng/mL")
 
-
-
-
 class SensorDataOut(BaseModel):
     """
     Returned to the ESP32 device (and any API clients) after a successful write.
@@ -93,3 +90,15 @@ class SensorDataOut(BaseModel):
     status: str
     message: str
     record_id: int = Field(description="Database ID of the newly stored record")
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    device_id: str = "unknown_device"
+    message: str
+    history: list[ChatMessage] = []
+
+class ChatResponse(BaseModel):
+    response: str

@@ -33,7 +33,8 @@ from sqlalchemy.orm import Session
 import crud
 from config import settings
 from database import Base, engine, get_db
-from schemas import SensorDataIn, SensorDataOut, QuestionnaireDataIn
+from schemas import ChatRequest, ChatResponse, SensorDataIn, SensorDataOut, QuestionnaireDataIn
+from chat_service import generate_chat_response
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -314,3 +315,59 @@ def receive_questionnaire_data(
         message="questionnaire data stored",
         record_id=record.id,
     )
+
+
+@app.post(
+    "/chat",
+    response_model=ChatResponse,
+    status_code=status.HTTP_200_OK,
+    tags=["Chat"],
+    summary="Chat with the Digital Twin (Ollama)",
+)
+async def chat_with_digital_twin(
+    payload: ChatRequest,
+    db: Session = Depends(get_db),
+) -> ChatResponse:
+    health_context = None
+    try:
+        from models import SensorReading
+
+        record = (
+            db.query(SensorReading)
+            .filter(SensorReading.device_id == payload.device_id)
+            .order_by(SensorReading.timestamp.desc())
+            .first()
+        )
+
+        if record:
+            twin_data = await run_ai_pipeline(payload.device_id)
+            health_context = {
+                "sensor": {
+                    "heart_rate": record.heart_rate,
+                    "spo2": record.spo2,
+                    "ds18b20_temp": record.ds18b20_temp,
+                    "dht22_temp": record.dht22_temp,
+                    "dht22_humidity": record.dht22_humidity,
+                    "timestamp": record.timestamp,
+                },
+                "twin": (twin_data or {}).get("twin"),
+                "gnn": (twin_data or {}).get("gnn"),
+                "rl": (twin_data or {}).get("rl"),
+            }
+    except Exception as exc:
+        logger.warning("Chat context unavailable (DB/pipeline). Proceeding without context: %s", exc)
+        health_context = None
+
+    history = []
+    if payload.history:
+        for msg in payload.history:
+            if msg.role in {"user", "assistant"} and msg.content:
+                history.append({"role": msg.role, "content": msg.content})
+
+    assistant_text = await generate_chat_response(
+        message=payload.message,
+        history=history,
+        health_context=health_context,
+    )
+
+    return ChatResponse(response=assistant_text)

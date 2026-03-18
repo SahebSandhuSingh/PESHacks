@@ -110,7 +110,7 @@ class DigitalTwinEnv(gym.Env):
         self.state = self._transition(self.state, action)
 
         # Compute reward based on physiological improvement
-        reward = self._compute_reward(prev_state, self.state)
+        reward = self._compute_reward(prev_state, self.state, action)
 
         self.step_count += 1
 
@@ -131,7 +131,7 @@ class DigitalTwinEnv(gym.Env):
         Used by the RL agent during inference to compare all actions.
         """
         next_state = self._transition(state.copy(), action)
-        reward = self._compute_reward(state, next_state)
+        reward = self._compute_reward(state, next_state, action)
         return next_state, reward
 
     def action_name(self, action: int) -> str:
@@ -150,53 +150,79 @@ class DigitalTwinEnv(gym.Env):
         """
         s = state.copy()
         noise = lambda scale=0.02: np.random.normal(0, scale)
+        stress_level = float(s[STRESS])
+        sleep_deficit = 1.0 - float(s[SLEEP])
+        activity_gap = 1.0 - float(s[ACTIVITY])
+        temp_gap = 1.0 - float(s[TEMP])
+        symptom_level = float(s[SYMPTOM])
 
         if action == 0:
-            # Improve sleep routine:
-            # Sleep consistency improves directly.
-            # Better sleep lowers stress and stabilises temperature rhythm.
-            s[SLEEP]    = min(1.0, s[SLEEP]    + 0.12 + noise())
-            s[STRESS]   = max(0.0, s[STRESS]   - 0.08 + noise())
-            s[TEMP]     = min(1.0, s[TEMP]     + 0.05 + noise())
-            s[SYMPTOM]  = max(0.0, s[SYMPTOM]  - 0.04 + noise())
+            sleep_gain = 0.05 + 0.14 * sleep_deficit
+            stress_relief = 0.03 + 0.08 * sleep_deficit + 0.04 * stress_level
+            temp_gain = 0.01 + 0.06 * sleep_deficit + 0.03 * temp_gap
+            symptom_relief = 0.01 + 0.05 * min(1.0, sleep_deficit + symptom_level)
+            s[SLEEP] = min(1.0, s[SLEEP] + sleep_gain + noise())
+            s[STRESS] = max(0.0, s[STRESS] - stress_relief + noise())
+            s[TEMP] = min(1.0, s[TEMP] + temp_gain + noise())
+            s[SYMPTOM] = max(0.0, s[SYMPTOM] - symptom_relief + noise())
 
         elif action == 1:
-            # Stress reduction intervention (meditation, therapy, etc.):
-            # Stress drops significantly.
-            # Indirectly improves sleep and temperature stability.
-            # Yoga/meditation also reduces symptom severity.
-            s[STRESS]   = max(0.0, s[STRESS]   - 0.15 + noise())
-            s[SLEEP]    = min(1.0, s[SLEEP]    + 0.06 + noise())
-            s[TEMP]     = min(1.0, s[TEMP]     + 0.04 + noise())
-            s[SYMPTOM]  = max(0.0, s[SYMPTOM]  - 0.10 + noise())
+            stress_relief = 0.05 + 0.16 * stress_level
+            sleep_gain = 0.01 + 0.08 * stress_level + 0.04 * sleep_deficit
+            temp_gain = 0.01 + 0.05 * stress_level + 0.03 * temp_gap
+            symptom_relief = 0.02 + 0.10 * symptom_level
+            s[STRESS] = max(0.0, s[STRESS] - stress_relief + noise())
+            s[SLEEP] = min(1.0, s[SLEEP] + sleep_gain + noise())
+            s[TEMP] = min(1.0, s[TEMP] + temp_gain + noise())
+            s[SYMPTOM] = max(0.0, s[SYMPTOM] - symptom_relief + noise())
 
         elif action == 2:
-            # Increase physical activity:
-            # Activity score rises directly.
-            # Moderate activity lowers stress and improves temperature.
-            # High existing stress may slightly worsen from overexertion.
-            s[ACTIVITY] = min(1.0, s[ACTIVITY] + 0.12 + noise())
-            s[STRESS]   = max(0.0, s[STRESS]   - 0.05 + noise(0.03))
-            s[TEMP]     = min(1.0, s[TEMP]     + 0.04 + noise())
-            s[SYMPTOM]  = max(0.0, s[SYMPTOM]  - 0.06 + noise())
+            activity_gain = 0.04 + 0.14 * activity_gap
+            temp_gain = 0.01 + 0.06 * activity_gap + 0.03 * temp_gap
+            symptom_relief = 0.01 + 0.07 * symptom_level
+            stress_relief = 0.02 + 0.06 * activity_gap - 0.08 * max(0.0, stress_level - 0.7) - 0.06 * max(0.0, 0.35 - s[SLEEP])
+            sleep_effect = 0.01 + 0.03 * activity_gap - 0.05 * max(0.0, stress_level - 0.75)
+            s[ACTIVITY] = min(1.0, s[ACTIVITY] + activity_gain + noise())
+            s[STRESS] = np.clip(s[STRESS] - stress_relief + noise(0.03), 0.0, 1.0)
+            s[SLEEP] = np.clip(s[SLEEP] + sleep_effect + noise(0.02), 0.0, 1.0)
+            s[TEMP] = min(1.0, s[TEMP] + temp_gain + noise())
+            s[SYMPTOM] = max(0.0, s[SYMPTOM] - symptom_relief + noise())
 
         elif action == 3:
-            # Maintain current habits:
-            # Minimal change — slight natural drift toward baseline.
-            s[STRESS]   = s[STRESS]   + noise(0.03)
-            s[SLEEP]    = s[SLEEP]    + noise(0.03)
-            s[ACTIVITY] = s[ACTIVITY] + noise(0.03)
-            s[TEMP]     = s[TEMP]     + noise(0.03)
-            s[SYMPTOM]  = s[SYMPTOM]  + noise(0.03)
+            stable_state = (
+                stress_level < 0.35 and
+                s[SLEEP] > 0.70 and
+                s[ACTIVITY] > 0.55 and
+                s[TEMP] > 0.65 and
+                symptom_level < 0.30
+            )
+            if stable_state:
+                s[STRESS] = max(0.0, s[STRESS] - 0.01 + noise(0.012))
+                s[SLEEP] = min(1.0, s[SLEEP] + 0.01 + noise(0.012))
+                s[ACTIVITY] = np.clip(s[ACTIVITY] + noise(0.012), 0.0, 1.0)
+                s[TEMP] = min(1.0, s[TEMP] + 0.01 + noise(0.012))
+                s[SYMPTOM] = max(0.0, s[SYMPTOM] - 0.01 + noise(0.012))
+            else:
+                drift = 0.04
+                deterioration = 0.03
+                s[STRESS] = s[STRESS] + deterioration + noise(drift)
+                s[SLEEP] = s[SLEEP] - deterioration + noise(drift)
+                s[ACTIVITY] = s[ACTIVITY] - (deterioration * 0.5) + noise(drift)
+                s[TEMP] = s[TEMP] - (deterioration * 0.5) + noise(drift)
+                s[SYMPTOM] = s[SYMPTOM] + (deterioration * 0.6) + noise(drift)
 
         elif action == 4:
-            # Recommend medical consultation:
-            # Professional intervention — broad moderate improvement across all axes.
-            s[STRESS]   = max(0.0, s[STRESS]   - 0.10 + noise())
-            s[SLEEP]    = min(1.0, s[SLEEP]    + 0.08 + noise())
-            s[ACTIVITY] = min(1.0, s[ACTIVITY] + 0.05 + noise())
-            s[TEMP]     = min(1.0, s[TEMP]     + 0.06 + noise())
-            s[SYMPTOM]  = max(0.0, s[SYMPTOM]  - 0.12 + noise())
+            severity = max(stress_level, symptom_level, sleep_deficit)
+            stress_relief = 0.03 + 0.11 * severity
+            sleep_gain = 0.02 + 0.10 * max(sleep_deficit, symptom_level)
+            activity_gain = 0.01 + 0.05 * activity_gap
+            temp_gain = 0.01 + 0.07 * max(temp_gap, symptom_level)
+            symptom_relief = 0.03 + 0.14 * symptom_level
+            s[STRESS] = max(0.0, s[STRESS] - stress_relief + noise())
+            s[SLEEP] = min(1.0, s[SLEEP] + sleep_gain + noise())
+            s[ACTIVITY] = min(1.0, s[ACTIVITY] + activity_gain + noise())
+            s[TEMP] = min(1.0, s[TEMP] + temp_gain + noise())
+            s[SYMPTOM] = max(0.0, s[SYMPTOM] - symptom_relief + noise())
 
         return np.clip(s, 0.0, 1.0).astype(np.float32)
 
@@ -219,23 +245,63 @@ class DigitalTwinEnv(gym.Env):
         Reward function — encourages interventions that improve the patient's
         physiological stability in a clinically meaningful direction.
         """
-        reward = 0.0
-
         prev_stability = self._physiological_stability(prev)
         curr_stability = self._physiological_stability(curr)
         stability_delta = curr_stability - prev_stability
+        reward = stability_delta * 22.0
+        stable_context = (
+            prev_stability >= 0.72 and
+            prev[STRESS] <= 0.35 and
+            prev[SLEEP] >= 0.68 and
+            prev[ACTIVITY] >= 0.50 and
+            prev[TEMP] >= 0.62 and
+            prev[SYMPTOM] <= 0.30
+        )
 
-        # Base reward: heavily weight stability improvements
-        if stability_delta > 0:
-            reward += stability_delta * 20.0  # make positive changes obvious
-        else:
-            reward -= 2.0  # penalty for worsening
+        deltas = curr - prev
+        reward += (prev[STRESS] - curr[STRESS]) * 6.0
+        reward += (curr[SLEEP] - prev[SLEEP]) * 5.0
+        reward += (curr[ACTIVITY] - prev[ACTIVITY]) * 3.0
+        reward += (curr[TEMP] - prev[TEMP]) * 4.0
+        reward += (prev[SYMPTOM] - curr[SYMPTOM]) * 6.0
 
-        # Structural penalty for inaction if patient is not perfectly healthy
-        if action == 3:
-            if prev_stability < 0.80:
-                reward -= 5.0  # massive penalty for doing nothing when sick
+        if stability_delta < 0:
+            reward += stability_delta * 10.0
+
+        if action == 0:
+            reward += 2.0 * max(0.0, 0.55 - prev[SLEEP])
+            reward -= 1.0 * max(0.0, prev[SLEEP] - 0.80)
+        elif action == 1:
+            reward += 2.0 * max(0.0, prev[STRESS] - 0.55)
+            reward += 1.0 * max(0.0, prev[SYMPTOM] - 0.55)
+        elif action == 2:
+            reward += 2.0 * max(0.0, 0.55 - prev[ACTIVITY])
+            reward -= 2.5 * max(0.0, prev[STRESS] - 0.80)
+            reward -= 1.5 * max(0.0, 0.30 - prev[SLEEP])
+        elif action == 3:
+            if stable_context:
+                reward += 3.0
+                if stability_delta >= 0:
+                    reward += 1.5
+            elif prev_stability < 0.78:
+                reward -= 4.0
             else:
-                reward += 1.0  # small reward for maintaining good health
+                reward += 1.2
+        elif action == 4:
+            severity = max(prev[STRESS], prev[SYMPTOM], 1.0 - prev[SLEEP])
+            reward += 2.5 * max(0.0, severity - 0.65)
+            reward -= 1.5 * max(0.0, 0.45 - severity)
+
+        if stable_context and action != 3:
+            reward -= 1.5
+            if action == 4:
+                reward -= 1.5
+            elif action in (0, 1):
+                reward -= 0.5
+
+        overshoot_penalty = 0.0
+        overshoot_penalty += max(0.0, deltas[ACTIVITY] - 0.20) * 3.0
+        overshoot_penalty += max(0.0, -deltas[STRESS] - 0.25) * 1.0
+        reward -= overshoot_penalty
 
         return float(reward)

@@ -8,19 +8,46 @@ export const ChatWidget = () => {
     { role: 'assistant', text: 'Hi Pragya. I am your Digital Twin. What would you like to know about your hormonal health today?' }
   ]);
   const [input, setInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages(prev => [...prev, { role: 'user', text: input }]);
+  const handleSend = async () => {
+    if (!input.trim() || isSending) return;
+
+    const userText = input;
+    setMessages(prev => [...prev, { role: 'user', text: userText }]);
     setInput('');
-    
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        text: 'Analyzing your recent sensor data and cycle history... I recommend reducing stress through 10 minutes of meditation today to improve your Sleep Stability.' 
+    setIsSending(true);
+
+    try {
+      const history = messages.map(m => ({
+        role: m.role,
+        content: m.text
+      }));
+
+      const res = await fetch('http://127.0.0.1:8000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          device_id: 'unknown_device',
+          message: userText,
+          history
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Chat request failed (${res.status})`);
+      }
+
+      const data = await res.json();
+      setMessages(prev => [...prev, { role: 'assistant', text: data.response || '...' }]);
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        text: 'I could not reach the AI server. Please make sure the backend is running and Ollama is on.'
       }]);
-    }, 1500);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -81,7 +108,11 @@ export const ChatWidget = () => {
             />
             <button 
               onClick={handleSend}
-              className="absolute right-2 p-2 bg-purple-500 text-white rounded-full hover:bg-purple-600 transition-colors"
+              className={clsx(
+                "absolute right-2 p-2 text-white rounded-full transition-colors",
+                isSending ? "bg-purple-300 cursor-not-allowed" : "bg-purple-500 hover:bg-purple-600"
+              )}
+              disabled={isSending}
             >
               <Send size={16} className="-ml-0.5" />
             </button>

@@ -33,10 +33,17 @@ const QUESTIONS: Question[] = [
     icon: <Calendar className="w-6 h-6" />
   },
   {
-    id: 'height_weight',
-    title: 'What is your height and weight?',
-    description: 'Calculates BMI — obesity and PCOS are directly linked',
-    type: 'text',
+    id: 'height_cm',
+    title: 'What is your height (in cm)?',
+    description: 'Used alongside weight to calculate BMI, a key indicator for PCOS risk.',
+    type: 'number',
+    icon: <Scale className="w-6 h-6" />
+  },
+  {
+    id: 'weight_kg',
+    title: 'What is your weight (in kg)?',
+    description: 'Used alongside height to calculate BMI, a key indicator for PCOS risk.',
+    type: 'number',
     icon: <Scale className="w-6 h-6" />
   },
   {
@@ -106,10 +113,49 @@ export const OnboardingPage = () => {
   const { setCompletedOnboarding } = useAuth();
   const navigate = useNavigate();
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < QUESTIONS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
+      try {
+        // Calculate age from dob
+        let age = null;
+        if (answers.dob) {
+          const dob = new Date(answers.dob);
+          const diff_ms = Date.now() - dob.getTime();
+          const age_dt = new Date(diff_ms); 
+          age = Math.abs(age_dt.getUTCFullYear() - 1970);
+        }
+
+        // Calculate BMI
+        let bmi = null;
+        if (answers.weight_kg && answers.height_cm) {
+          const height_m = answers.height_cm / 100;
+          bmi = answers.weight_kg / (height_m * height_m);
+        }
+
+        // Send to backend
+        await fetch('http://127.0.0.1:8000/questionnaire', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            device_id: 'unknown_device',
+            timestamp: Date.now(),
+            age: age,
+            weight_kg: answers.weight_kg ? Number(answers.weight_kg) : null,
+            height_cm: answers.height_cm ? Number(answers.height_cm) : null,
+            bmi: bmi,
+            // Mocking these to avoid null errors on first submit, since they aren't all in onboarding
+            perceived_stress: 5,
+            mood_score: 5,
+            pain_level: 1,
+            flow_heaviness: 'none'
+          })
+        });
+      } catch (err) {
+        console.error("Failed to submit questionnaire", err);
+      }
+      
       setCompletedOnboarding(true);
       navigate('/');
     }
