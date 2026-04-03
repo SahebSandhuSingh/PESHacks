@@ -53,4 +53,5 @@ Includes parameters such as:
 This project is for educational and support purposes only and does not replace professional medical advice.
 
 ## Author
-Your Name
+Saheb Singh Sandhu
+Pragya Aggarwal
